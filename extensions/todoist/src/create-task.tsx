@@ -89,6 +89,31 @@ function CreateTask({ fromProjectId, fromLabel, fromTodayEmptyView, draftValues 
           }
         }
 
+        // Remove priority markers if priority is set and not default
+        if (values.priority && parseInt(values.priority) !== lowestPriority.value) {
+          cleanContent = cleanContent.replace(/\bp[1-4]\b/gi, '').replace(/\s+/g, ' ').trim();
+        }
+
+        // Remove date strings if date is set and we know what was parsed
+        if (values.date && parsedData.dateString) {
+          const escapedDateString = parsedData.dateString.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const dateRegex = new RegExp(`\\b${escapedDateString}\\b`, "gi");
+          cleanContent = cleanContent.replace(dateRegex, '').replace(/\s+/g, ' ').trim();
+        }
+
+        // Remove deadline markers if deadline is set
+        if (values.deadline) {
+          cleanContent = cleanContent.replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
+        }
+
+        // Remove label markers if labels are set
+        if (values.labels && values.labels.length > 0) {
+          // Remove quoted labels @"label name"
+          cleanContent = cleanContent.replace(/@"[^"]+"/g, '').replace(/\s+/g, ' ').trim();
+          // Remove unquoted labels @labelname
+          cleanContent = cleanContent.replace(/@[a-zA-Z0-9_\u00A0-\uFFFF]+/g, '').replace(/\s+/g, ' ').trim();
+        }
+
         // Use addTask API with structured parameters for reliable assignment
         const taskData = await addTask(
           {
